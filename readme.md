@@ -37,7 +37,8 @@ public class Test {
 ```
 And that's it ! You have a fully working config file.
 
-If you need you can change the config folder name using `EZConfig.setConfigFolderName("<Insert name here>");`
+If you need you can change the config folder name using 
+`EZConfig.setConfigFolderName("<Insert name here>");`
 
 ### Support me:
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/tbvns)
