@@ -34,11 +34,6 @@ public class EZConfig {
     }
 
     public static void save() throws Exception {
-        File folder = new File(EZConfigUtils.getConfigFolder());
-        if (!folder.exists()) {
-            folder.mkdir();
-        }
-
         Gson gson = new GsonBuilder()
                 .serializeNulls()
                 .excludeFieldsWithModifiers()
@@ -46,7 +41,12 @@ public class EZConfig {
                 .create();
 
         for (Class<? extends Config> registeredClass : registeredClasses) {
-            File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName()));
+            File folder = new File(EZConfigUtils.getConfigFolder(registeredClass));
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+
+            File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName(), registeredClass));
             if (!file.exists()) {
                 file.createNewFile();
             }
@@ -64,7 +64,7 @@ public class EZConfig {
     }
 
     public static void createDefault(Class<? extends Config> c) throws Exception {
-        File folder = new File(EZConfigUtils.getConfigFolder());
+        File folder = new File(EZConfigUtils.getConfigFolder(c));
         if (!folder.exists()) {
             folder.mkdir();
         }
@@ -75,7 +75,7 @@ public class EZConfig {
                 .setPrettyPrinting()
                 .create();
 
-        File file = new File(EZConfigUtils.getConfig(c.getSimpleName()));
+        File file = new File(EZConfigUtils.getConfig(c.getSimpleName(), c));
 
         if (!file.exists()) {
             file.createNewFile();
@@ -95,7 +95,7 @@ public class EZConfig {
 
     public static void load() throws Exception {
         for (Class<? extends Config> registeredClass : registeredClasses) {
-            File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName()));
+            File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName(), registeredClass));
             System.out.println(file.getPath());
             if (!file.exists()) {
                 createDefault(registeredClass);

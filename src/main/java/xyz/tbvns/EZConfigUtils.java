@@ -10,21 +10,21 @@ import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 
 public class EZConfigUtils {
-    public static String getJarPath() throws URISyntaxException {
-        return new File(EZConfigUtils.class.getProtectionDomain().getCodeSource().getLocation()
+    public static String getJarPath(Class clazz) throws URISyntaxException {
+        return new File(clazz.getProtectionDomain().getCodeSource().getLocation()
                 .toURI()).getPath();
     }
 
-    public static String getJarParent() throws URISyntaxException {
-        return new File(getJarPath()).getParent();
+    public static String getJarParent(Class clazz) throws URISyntaxException {
+        return new File(getJarPath(clazz)).getParent();
     }
 
-    public static String getConfigFolder() throws URISyntaxException {
-        return getJarParent() + File.separator + EZConfig.getConfigFolderName();
+    public static String getConfigFolder(Class clazz) throws URISyntaxException {
+        return getJarParent(clazz) + File.separator + EZConfig.getConfigFolderName();
     }
 
-    public static String getConfig(String name) throws URISyntaxException {
-        return getConfigFolder() + File.separator + name + ".json";
+    public static String getConfig(String name, Class clazz) throws URISyntaxException {
+        return getConfigFolder(clazz) + File.separator + name + ".json";
     }
 
     public static <T> T deserializeAndUpdateStaticFields(String jsonContent, Class<T> clazz) throws Exception {
