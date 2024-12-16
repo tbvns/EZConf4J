@@ -40,5 +40,42 @@ And that's it ! You have a fully working config file.
 If you need you can change the config folder name using 
 `EZConfig.setConfigFolderName("<Insert name here>");`
 
+# Use it in your project:
+### First, add JitPack to yor repo:
+#### Maven
+```xml
+<repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+</repository>
+```
+#### Gradle
+```groovy
+dependencyResolutionManagement {
+	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+	repositories {
+		mavenCentral()
+		maven { url 'https://jitpack.io' }
+	}
+}
+```
+___
+### then add the dependency:
+#### Maven
+```xml
+<dependency>
+    <groupId>com.github.tbvns</groupId>
+    <artifactId>EZConf4j</artifactId>
+    <version>-SNAPSHOT</version>
+</dependency>
+```
+#### Gradle
+```groovy
+dependencies {
+        implementation 'com.github.tbvns:EZConf4j:-SNAPSHOT'
+}
+```
+
 ### Support me:
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/tbvns)
+
