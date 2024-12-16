@@ -5,7 +5,8 @@ It's the simplest way to create config file !
 First create a new package. 
 You are going to place all your config class inside the package.
 For this example, we are going to use `xyz.tbvns.Example.configs`.
-Note that every class implementing `Config` inside this package will be registered as config files.
+> [!WARNING]
+> Every class implementing `Config` inside this package will be registered as config files.
 
 Then create a config class inside this new package:
 ```java
@@ -37,6 +38,21 @@ public class Test {
 }
 ```
 And that's it ! You have a fully working config file.
+It should look like this:
+```json
+{
+  "wowAString": "OMG a string",
+  "omgAnIntList": [
+    1,
+    2,
+    3
+  ],
+  "HelloWorld": {
+    "Hello": 1,
+    "World": 2
+  }
+}
+```
 
 If you need you can change the config folder name using 
 `EZConfig.setConfigFolderName("<Insert name here>");`
