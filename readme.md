@@ -1,10 +1,11 @@
-# EZConfig4J
+# EZConf4j
 ## What is it ?
 It's the simplest way to create config file !
 ## Usage:
 First create a new package. 
 You are going to place all your config class inside the package.
 For this example, we are going to use `xyz.tbvns.Example.configs`.
+Note that every class implementing `Config` inside this package will be registered as config files.
 
 Then create a config class inside this new package:
 ```java
