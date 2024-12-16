@@ -96,7 +96,6 @@ public class EZConfig {
     public static void load() throws Exception {
         for (Class<? extends Config> registeredClass : registeredClasses) {
             File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName(), registeredClass));
-            System.out.println(file.getPath());
             if (!file.exists()) {
                 createDefault(registeredClass);
                 continue;
