@@ -38,6 +38,21 @@ public class Test {
 }
 ```
 And that's it ! You have a fully working config file.
+It should look like this:
+```json
+{
+  "wowAString": "OMG a string",
+  "omgAnIntList": [
+    1,
+    2,
+    3
+  ],
+  "HelloWorld": {
+    "Hello": 1,
+    "World": 2
+  }
+}
+```
 
 If you need you can change the config folder name using 
 `EZConfig.setConfigFolderName("<Insert name here>");`
