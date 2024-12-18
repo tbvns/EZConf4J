@@ -1,6 +1,6 @@
 # EZConf4j
 ## What is it ?
-It's the simplest way to create config file !
+It's the simplest way to create configs files !
 ## Usage:
 First create a new package. 
 You are going to place all your config class inside the package.
