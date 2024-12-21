@@ -58,7 +58,7 @@ If you need you can change the config folder name using
 `EZConfig.setConfigFolderName("<Insert name here>");`
 
 # Use it in your project:
-### First, add JitPack to yor repo:
+### First, add JitPack to your repo:
 #### Maven
 ```xml
 <repository>
