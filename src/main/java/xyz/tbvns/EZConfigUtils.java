@@ -7,13 +7,15 @@ import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 
 public class EZConfigUtils {
+    private static final String APP_NAME = "nsi-website";
+    private static final String CONFIG_DIR_NAME = "Config";
+
     public static String getJarPath(Class<?> clazz) {
         try {
             String className = clazz.getName().replace('.', '/') + ".class";
@@ -24,56 +26,79 @@ public class EZConfigUtils {
             }
 
             String urlString = classUrl.toString();
-            String decodedPath;
+            String decodedPath = "";
 
             if (urlString.startsWith("jar:nested:")) {
+                // Spring Boot nested JAR handling
                 int endIndex = urlString.indexOf("!/");
                 String path = urlString.substring("jar:nested:".length(), endIndex);
-                decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
-                if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                    if (decodedPath.startsWith("/") && decodedPath.length() > 2 && decodedPath.charAt(2) == ':') {
-                        decodedPath = decodedPath.substring(1);
-                    }
-                }
-            }
-            else if (urlString.startsWith("jar:file:")) {
+                decodedPath = decodePath(path);
+            } else if (urlString.startsWith("jar:file:")) {
+                // Regular JAR file
                 int endIndex = urlString.indexOf("!");
-                decodedPath = URLDecoder.decode(
-                        urlString.substring("jar:file:".length(), endIndex),
-                        StandardCharsets.UTF_8.name()
-                );
-            }
-            // Handle IDE execution
-            else if (urlString.startsWith("file:")) {
-                int endIndex = urlString.length() - className.length() - 2;
-                decodedPath = URLDecoder.decode(
-                        urlString.substring("file:".length(), endIndex),
-                        StandardCharsets.UTF_8.name()
-                );
-            }
-            else {
-                throw new IllegalStateException("Unsupported class location: " + urlString);
+                decodedPath = decodePath(urlString.substring("jar:file:".length(), endIndex));
+            } else if (urlString.startsWith("file:")) {
+                // IDE execution
+                int endIndex = urlString.length() - className.length() - "file:".length() - 2;
+                decodedPath = decodePath(urlString.substring("file:".length(), endIndex));
             }
 
-            // Handle special characters and normalize path
-            File jarFile = new File(decodedPath);
-            return jarFile.getAbsolutePath();
+            return Paths.get(decodedPath).normalize().toString();
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to get JAR path", e);
         }
     }
 
-    public static String getJarParent(Class clazz) throws URISyntaxException {
-        return new File(getJarPath(clazz)).getParent();
+    private static String decodePath(String encodedPath) throws Exception {
+        String decoded = URLDecoder.decode(encodedPath, StandardCharsets.UTF_8.name());
+
+        // Fix Windows paths
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            if (decoded.startsWith("/") && decoded.length() > 2 && decoded.charAt(2) == ':') {
+                return decoded.substring(1);
+            }
+        }
+        return decoded;
     }
 
-    public static String getConfigFolder(Class clazz) throws URISyntaxException {
-        return getJarParent(clazz) + File.separator + EZConfig.getConfigFolderName();
+    public static String getConfigFolder(Class<?> clazz) {
+        if (isRunningFromJar(clazz)) {
+            return getSystemConfigDirectory();
+        }
+        return getDevelopmentConfigDirectory();
     }
 
-    public static String getConfig(String name, Class clazz) throws URISyntaxException {
-        return getConfigFolder(clazz) + File.separator + name + ".json";
+    private static boolean isRunningFromJar(Class<?> clazz) {
+        String className = clazz.getName().replace('.', '/') + ".class";
+        URL resource = clazz.getClassLoader().getResource(className);
+        return resource != null && resource.toString().startsWith("jar:");
+    }
+
+    private static String getSystemConfigDirectory() {
+        String baseDir = System.getProperty("user.home");
+
+        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+            String xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
+            if (xdgConfigHome != null && !xdgConfigHome.isEmpty()) {
+                baseDir = xdgConfigHome;
+            } else {
+                baseDir += "/.config";
+            }
+        } else if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            baseDir = System.getenv("APPDATA");
+        }
+
+        return Paths.get(baseDir, APP_NAME, CONFIG_DIR_NAME).toString();
+    }
+
+    private static String getDevelopmentConfigDirectory() {
+        return Paths.get("").toAbsolutePath().toString()
+                + File.separator + CONFIG_DIR_NAME;
+    }
+
+    public static String getConfig(String name, Class<?> clazz) {
+        return Paths.get(getConfigFolder(clazz), name + ".json").toString();
     }
 
     public static <T> T deserializeAndUpdateStaticFields(String jsonContent, Class<T> clazz) throws Exception {
@@ -84,8 +109,8 @@ public class EZConfigUtils {
         for (Field field : clazz.getDeclaredFields()) {
             if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
                 field.setAccessible(true);
-
                 String fieldName = field.getName();
+
                 if (jsonObject.has(fieldName)) {
                     JsonElement jsonElement = jsonObject.get(fieldName);
                     Object value = gson.fromJson(jsonElement, field.getType());
@@ -93,8 +118,6 @@ public class EZConfigUtils {
                 }
             }
         }
-
         return object;
     }
-
 }

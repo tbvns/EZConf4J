@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.reflections.Reflections;
 import xyz.tbvns.Exeptions.NoEmptyConstructor;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,6 +17,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -66,58 +70,36 @@ public class EZConfig {
     }
 
     public static void createDefault(Class<? extends Config> c) throws Exception {
-        // Get the configuration directory path
-        File configFolder = new File(EZConfigUtils.getConfigFolder(c));
+        // Get config directory path
+        String configDirPath = EZConfigUtils.getConfigFolder(c);
+        Path configDir = Paths.get(configDirPath);
 
-        // Create directories with proper existence check
-        if (!configFolder.exists() && !configFolder.mkdirs()) {
-            throw new IOException("Failed to create config directory: " + configFolder.getAbsolutePath());
+        // Create config directory with proper permissions
+        if (!Files.exists(configDir)) {
+            Files.createDirectories(configDir);
         }
 
-        // Initialize Gson instance
-        Gson gson = new GsonBuilder()
-                .serializeNulls()
-                .excludeFieldsWithModifiers()
-                .setPrettyPrinting()
-                .create();
+        // Create config file path
+        Path configFile = Paths.get(EZConfigUtils.getConfig(c.getSimpleName(), c));
 
-        // Get the target config file
-        File configFile = new File(EZConfigUtils.getConfig(c.getSimpleName(), c));
+        // Only create file if it doesn't exist
+        if (!Files.exists(configFile)) {
+            // Create empty file with proper permissions
+            Files.createFile(configFile);
 
-        // Create file only if it doesn't exist
-        if (!configFile.exists()) {
-            // Ensure parent directories exist (again, in case of race condition)
-            File parentDir = configFile.getParentFile();
-            if (!parentDir.exists() && !parentDir.mkdirs()) {
-                throw new IOException("Failed to create parent directory: " + parentDir.getAbsolutePath());
-            }
-
-            // Create empty file
-            if (!configFile.createNewFile()) {
-                throw new IOException("Failed to create config file: " + configFile.getAbsolutePath());
-            }
-        }
-
-        // Verify empty constructor exists
-        Constructor<?> constructor;
-        try {
-            constructor = c.getDeclaredConstructor();
-        } catch (NoSuchMethodException e) {
-            throw new NoEmptyConstructor("No empty constructor found on class " + c.getSimpleName());
-        }
-
-        // Only write defaults if file is empty
-        if (configFile.length() == 0) {
-            // Create default config instance
+            // Initialize default config
+            Constructor<?> constructor = c.getDeclaredConstructor();
             Config defaultConfig = (Config) constructor.newInstance();
 
-            // Write to file with proper resource handling
-            try (FileWriter writer = new FileWriter(configFile)) {
-                gson.toJson(defaultConfig, writer);
+            // Write config with proper file locking
+            try (BufferedWriter writer = Files.newBufferedWriter(configFile, StandardCharsets.UTF_8)) {
+                new GsonBuilder()
+                        .setPrettyPrinting()
+                        .create()
+                        .toJson(defaultConfig, writer);
             }
         }
-    }
-    public static void load() throws Exception {
+    }    public static void load() throws Exception {
         for (Class<? extends Config> registeredClass : registeredClasses) {
             File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName(), registeredClass));
             if (!file.exists()) {
