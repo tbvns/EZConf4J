@@ -1,6 +1,6 @@
 # EZConf4j
 ## What is it ?
-It's the simplest way to create config file !
+It's the simplest way to create configs files !
 ## Usage:
 First create a new package. 
 You are going to place all your config class inside the package.
@@ -58,7 +58,7 @@ If you need you can change the config folder name using
 `EZConfig.setConfigFolderName("<Insert name here>");`
 
 # Use it in your project:
-### First, add JitPack to yor repo:
+### First, add JitPack to your repo:
 #### Maven
 ```xml
 <repository>
