@@ -10,6 +10,8 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 public class EZConfigUtils {
     public static String getJarPath(Class<?> clazz) {
@@ -22,26 +24,46 @@ public class EZConfigUtils {
             }
 
             String urlString = classUrl.toString();
+            String decodedPath;
 
             if (urlString.startsWith("jar:nested:")) {
                 int endIndex = urlString.indexOf("!/");
                 String path = urlString.substring("jar:nested:".length(), endIndex);
-                return new File(new URI(path)).getAbsolutePath();
+                decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+                if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                    if (decodedPath.startsWith("/") && decodedPath.length() > 2 && decodedPath.charAt(2) == ':') {
+                        decodedPath = decodedPath.substring(1);
+                    }
+                }
             }
             else if (urlString.startsWith("jar:file:")) {
                 int endIndex = urlString.indexOf("!");
-                return new File(new URI(urlString.substring(4, endIndex))).getAbsolutePath();
+                decodedPath = URLDecoder.decode(
+                        urlString.substring("jar:file:".length(), endIndex),
+                        StandardCharsets.UTF_8.name()
+                );
             }
+            // Handle IDE execution
             else if (urlString.startsWith("file:")) {
                 int endIndex = urlString.length() - className.length() - 2;
-                return new File(new URI(urlString.substring(0, endIndex))).getAbsolutePath();
+                decodedPath = URLDecoder.decode(
+                        urlString.substring("file:".length(), endIndex),
+                        StandardCharsets.UTF_8.name()
+                );
+            }
+            else {
+                throw new IllegalStateException("Unsupported class location: " + urlString);
             }
 
-            throw new IllegalStateException("Unsupported class location: " + urlString);
+            // Handle special characters and normalize path
+            File jarFile = new File(decodedPath);
+            return jarFile.getAbsolutePath();
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to get JAR path", e);
         }
     }
+
     public static String getJarParent(Class clazz) throws URISyntaxException {
         return new File(getJarPath(clazz)).getParent();
     }
