@@ -9,7 +9,9 @@ import org.reflections.Reflections;
 import xyz.tbvns.Exeptions.NoEmptyConstructor;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -64,35 +66,57 @@ public class EZConfig {
     }
 
     public static void createDefault(Class<? extends Config> c) throws Exception {
-        File folder = new File(EZConfigUtils.getConfigFolder(c));
-        if (!folder.exists()) {
-            folder.mkdir();
+        // Get the configuration directory path
+        File configFolder = new File(EZConfigUtils.getConfigFolder(c));
+
+        // Create directories with proper existence check
+        if (!configFolder.exists() && !configFolder.mkdirs()) {
+            throw new IOException("Failed to create config directory: " + configFolder.getAbsolutePath());
         }
 
+        // Initialize Gson instance
         Gson gson = new GsonBuilder()
                 .serializeNulls()
                 .excludeFieldsWithModifiers()
                 .setPrettyPrinting()
                 .create();
 
-        File file = new File(EZConfigUtils.getConfig(c.getSimpleName(), c));
+        // Get the target config file
+        File configFile = new File(EZConfigUtils.getConfig(c.getSimpleName(), c));
 
-        if (!file.exists()) {
-            file.createNewFile();
+        // Create file only if it doesn't exist
+        if (!configFile.exists()) {
+            // Ensure parent directories exist (again, in case of race condition)
+            File parentDir = configFile.getParentFile();
+            if (!parentDir.exists() && !parentDir.mkdirs()) {
+                throw new IOException("Failed to create parent directory: " + parentDir.getAbsolutePath());
+            }
+
+            // Create empty file
+            if (!configFile.createNewFile()) {
+                throw new IOException("Failed to create config file: " + configFile.getAbsolutePath());
+            }
         }
 
-        if (c.getDeclaredConstructor().isVarArgs()) {
+        // Verify empty constructor exists
+        Constructor<?> constructor;
+        try {
+            constructor = c.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
             throw new NoEmptyConstructor("No empty constructor found on class " + c.getSimpleName());
         }
 
-        FileUtils.writeStringToFile(
-                file,
-                gson.toJson(c.getDeclaredConstructor().newInstance()),
-                Charset.defaultCharset()
-        );
+        // Only write defaults if file is empty
+        if (configFile.length() == 0) {
+            // Create default config instance
+            Config defaultConfig = (Config) constructor.newInstance();
 
+            // Write to file with proper resource handling
+            try (FileWriter writer = new FileWriter(configFile)) {
+                gson.toJson(defaultConfig, writer);
+            }
+        }
     }
-
     public static void load() throws Exception {
         for (Class<? extends Config> registeredClass : registeredClasses) {
             File file = new File(EZConfigUtils.getConfig(registeredClass.getSimpleName(), registeredClass));
