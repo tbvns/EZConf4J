@@ -23,12 +23,16 @@ public class EZConfigUtils {
 
             String urlString = classUrl.toString();
 
-            if (urlString.startsWith("jar:file:")) {
-                // Extract actual file path from JAR URL
+            if (urlString.startsWith("jar:nested:")) {
+                int endIndex = urlString.indexOf("!/");
+                String path = urlString.substring("jar:nested:".length(), endIndex);
+                return new File(new URI(path)).getAbsolutePath();
+            }
+            else if (urlString.startsWith("jar:file:")) {
                 int endIndex = urlString.indexOf("!");
                 return new File(new URI(urlString.substring(4, endIndex))).getAbsolutePath();
-            } else if (urlString.startsWith("file:")) {
-                // Handle class files in directory
+            }
+            else if (urlString.startsWith("file:")) {
                 int endIndex = urlString.length() - className.length() - 2;
                 return new File(new URI(urlString.substring(0, endIndex))).getAbsolutePath();
             }
@@ -38,7 +42,6 @@ public class EZConfigUtils {
             throw new RuntimeException("Failed to get JAR path", e);
         }
     }
-
     public static String getJarParent(Class clazz) throws URISyntaxException {
         return new File(getJarPath(clazz)).getParent();
     }
