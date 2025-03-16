@@ -47,6 +47,13 @@ public class EZConfig {
         EZConfigUtils.configFolder = path;
     }
 
+    /**
+     * @apiNote The ConfigFolderName is ignored if configFolder is set by hand.
+     */
+    public static String getConfigFolder() {
+        return EZConfigUtils.configFolder;
+    }
+
     public static void save() throws Exception {
         Gson gson = new GsonBuilder()
                 .serializeNulls()
